@@ -1,8 +1,0 @@
-{
-  "name": "<project name>",
-  "homepage": "https://<project-url>",
-  "authors": [
-    "kohactive <info@kohactive.com>"
-  ],
-  "private": true
-}
