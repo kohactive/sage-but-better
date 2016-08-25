@@ -55,18 +55,30 @@ var AmeRole = (function (_super) {
         this.actorTypeSpecificity = 1;
         this.name = roleId;
     }
+    AmeRole.prototype.hasOwnCap = function (capability) {
+        //In WordPress, a role name is also a capability name. Users that have the role "foo" always
+        //have the "foo" capability. It's debatable whether the role itself actually has that capability
+        //(WP_Role says no), but it's convenient to treat it that way.
+        if (capability === this.name) {
+            return true;
+        }
+        return _super.prototype.hasOwnCap.call(this, capability);
+    };
     return AmeRole;
 }(AmeBaseActor));
 var AmeUser = (function (_super) {
     __extends(AmeUser, _super);
-    function AmeUser(userLogin, displayName, capabilities, roles, isSuperAdmin) {
+    function AmeUser(userLogin, displayName, capabilities, roles, isSuperAdmin, userId) {
         if (isSuperAdmin === void 0) { isSuperAdmin = false; }
         _super.call(this, 'user:' + userLogin, displayName, capabilities);
+        this.userId = 0;
         this.isSuperAdmin = false;
+        this.avatarHTML = '';
         this.actorTypeSpecificity = 10;
         this.userLogin = userLogin;
         this.roles = roles;
         this.isSuperAdmin = isSuperAdmin;
+        this.userId = userId || 0;
         if (this.isSuperAdmin) {
             this.groupActors.push(AmeSuperAdmin.permanentActorId);
         }
@@ -74,6 +86,13 @@ var AmeUser = (function (_super) {
             this.groupActors.push('role:' + this.roles[i]);
         }
     }
+    AmeUser.createFromProperties = function (properties) {
+        var user = new AmeUser(properties.user_login, properties.display_name, properties.capabilities, properties.roles, properties.is_super_admin, properties.hasOwnProperty('id') ? properties.id : null);
+        if (properties.avatar_html) {
+            user.avatarHTML = properties.avatar_html;
+        }
+        return user;
+    };
     return AmeUser;
 }(AmeBaseActor));
 var AmeSuperAdmin = (function (_super) {
@@ -103,7 +122,7 @@ var AmeActorManager = (function () {
             _this.roles[role.name] = role;
         });
         AmeActorManager._.forEach(users, function (userDetails) {
-            var user = new AmeUser(userDetails.user_login, userDetails.display_name, userDetails.capabilities, userDetails.roles, userDetails.is_super_admin);
+            var user = AmeUser.createFromProperties(userDetails);
             _this.users[user.userLogin] = user;
         });
         if (this.isMultisite) {
@@ -264,14 +283,14 @@ var AmeActorManager = (function () {
     AmeActorManager.setCapInContext = function (context, actor, capability, hasCap, sourceType, sourceName) {
         capability = AmeActorManager.mapMetaCap(capability);
         var grant = sourceType ? [hasCap, sourceType, sourceName || null] : hasCap;
-        _.set(context, [actor, capability], grant);
+        AmeActorManager._.set(context, [actor, capability], grant);
     };
     AmeActorManager.prototype.resetCap = function (actor, capability) {
         AmeActorManager.resetCapInContext(this.grantedCapabilities, actor, capability);
     };
     AmeActorManager.resetCapInContext = function (context, actor, capability) {
         capability = AmeActorManager.mapMetaCap(capability);
-        if (_.has(context, [actor, capability])) {
+        if (AmeActorManager._.has(context, [actor, capability])) {
             delete context[actor][capability];
         }
     };

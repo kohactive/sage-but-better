@@ -3,7 +3,14 @@
 <description>
 
 ##Project Initialization
-1. `git clone git@github.com:kohactive/sage-but-better.git`
+1. Clone the repo:
+    ```
+    git clone git@github.com:kohactive/sage-but-better.git
+    cd sage-but-better
+    rm -rf .git
+    git init
+    ```
+
 2. Change the root and theme directory names to `<project-name>`
 3. Find and replace `<project-name>` with the project name used in step 2
 4. Add a `<description>` above

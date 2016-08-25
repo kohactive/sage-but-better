@@ -1,10 +1,10 @@
 <?php
 /*
-Plugin Name: Advanced Custom Fields Pro
-Plugin URI: http://www.advancedcustomfields.com/
+Plugin Name: Advanced Custom Fields PRO
+Plugin URI: https://www.advancedcustomfields.com/
 Description: Customise WordPress with powerful, professional and intuitive fields
-Version: 5.3.2.2
-Author: elliot condon
+Version: 5.4.2
+Author: Elliot Condon
 Author URI: http://www.elliotcondon.com/
 Copyright: Elliot Condon
 Text Domain: acf
@@ -17,9 +17,6 @@ if( ! class_exists('acf') ) :
 
 class acf {
 	
-	// vars
-	var $settings;
-		
 	
 	/*
 	*  __construct
@@ -61,7 +58,7 @@ class acf {
 			
 			// basic
 			'name'				=> __('Advanced Custom Fields', 'acf'),
-			'version'			=> '5.3.2.2',
+			'version'			=> '5.4.2',
 						
 			// urls
 			'basename'			=> plugin_basename( __FILE__ ),
@@ -81,8 +78,10 @@ class acf {
 			'capability'		=> 'manage_options',
 			'uploader'			=> 'wp',
 			'autoload'			=> false,
-			'export_textdomain'	=> '',
-			'export_translate'	=> array('title', 'label', 'instructions')
+			'l10n'				=> true,
+			'l10n_textdomain'	=> '',
+			'google_api_key'	=> '',
+			'google_api_client'	=> ''
 		);
 		
 		
@@ -99,15 +98,20 @@ class acf {
 		
 		// core
 		acf_include('core/ajax.php');
+		acf_include('core/cache.php');
+		acf_include('core/fields.php');
 		acf_include('core/field.php');
 		acf_include('core/input.php');
+		acf_include('core/validation.php');
 		acf_include('core/json.php');
 		acf_include('core/local.php');
 		acf_include('core/location.php');
+		acf_include('core/loop.php');
 		acf_include('core/media.php');
 		acf_include('core/revisions.php');
 		acf_include('core/compatibility.php');
 		acf_include('core/third_party.php');
+		acf_include('core/updates.php');
 		
 		
 		// forms
@@ -126,6 +130,7 @@ class acf {
 			acf_include('admin/field-group.php');
 			acf_include('admin/field-groups.php');
 			acf_include('admin/update.php');
+			acf_include('admin/update-network.php');
 			acf_include('admin/settings-tools.php');
 			//acf_include('admin/settings-addons.php');
 			acf_include('admin/settings-info.php');
@@ -220,6 +225,8 @@ class acf {
 		acf_include('fields/user.php');
 		acf_include('fields/google-map.php');
 		acf_include('fields/date_picker.php');
+		acf_include('fields/date_time_picker.php');
+		acf_include('fields/time_picker.php');
 		acf_include('fields/color_picker.php');
 		acf_include('fields/message.php');
 		acf_include('fields/tab.php');
@@ -369,117 +376,18 @@ class acf {
 		
 		// vars
 		$version = acf_get_setting('version');
-		$lang = get_locale();
 		$min = defined('SCRIPT_DEBUG') && SCRIPT_DEBUG ? '' : '.min';
-		$scripts = array();
-		$styles = array();
 		
 		
-		// append scripts
-		$scripts['select2'] = array(
-			'src'	=> acf_get_dir("assets/inc/select2/select2{$min}.js"),
-			'deps'	=> array('jquery')
-		);
-		
-		$scripts['acf-input'] = array(
-			'src'	=> acf_get_dir("assets/js/acf-input{$min}.js"),
-			'deps'	=> array(
-				'jquery',
-				'jquery-ui-core',
-				'jquery-ui-sortable',
-				'jquery-ui-resizable',
-				'jquery-ui-datepicker',
-				'wp-color-picker',
-				'select2'
-			)
-		);
-		
-		$scripts['acf-field-group'] = array(
-			'src'	=> acf_get_dir("assets/js/acf-field-group{$min}.js"),
-			'deps'	=> array('acf-input')
-		);
+		// scripts
+		wp_register_script('acf-input', acf_get_dir("assets/js/acf-input{$min}.js"), array('jquery', 'jquery-ui-core', 'jquery-ui-sortable', 'jquery-ui-resizable'), $version );
+		wp_register_script('acf-field-group', acf_get_dir("assets/js/acf-field-group{$min}.js"), array('acf-input'), $version );
 		
 		
-		// select2-l10n
-		if( $lang ) {
-			
-			// vars
-			$lang = str_replace('_', '-', $lang);
-			$lang_code = substr($lang, 0, 2);
-			$src = '';
-			
-			
-			// attempt 1
-			if( file_exists(acf_get_path("assets/inc/select2/select2_locale_{$lang_code}.js")) ) {
-				
-				$src = acf_get_dir("assets/inc/select2/select2_locale_{$lang_code}.js");
-				
-			} elseif( file_exists(acf_get_path("assets/inc/select2/select2_locale_{$lang}.js")) ) {
-				
-				$src = acf_get_dir("assets/inc/select2/select2_locale_{$lang}.js");
-				
-			}
-			
-			
-			// only append if file exists
-			if( $src ) {
-				
-				// append script
-				$scripts['select2-l10n'] = array(
-					'src'	=> $src,
-					'deps'	=> array('select2')
-				);
-				
-				
-				// append dep
-				$scripts['acf-input']['deps'][] = 'select2-l10n';
-				
-			}
-			
-		}
-		
-		
-		// register scripts
-		foreach( $scripts as $handle => $script ) {
-			
-			wp_register_script( $handle, $script['src'], $script['deps'], $version );
-			
-		}
-		
-		
-		// append styles
-		$styles['select2'] = array(
-			'src'		=> acf_get_dir('assets/inc/select2/select2.css'),
-			'deps'		=> false
-		);
-		
-		$styles['acf-datepicker'] = array(
-			'src'		=> acf_get_dir('assets/inc/datepicker/jquery-ui-1.10.4.custom.min.css'),
-			'deps'		=> false
-		);
-		
-		$styles['acf-global'] = array(
-			'src'		=> acf_get_dir('assets/css/acf-global.css'),
-			'deps'		=> false
-		);
-		
-		$styles['acf-input'] = array(
-			'src'		=> acf_get_dir('assets/css/acf-input.css'),
-			'deps'		=> array('acf-global', 'wp-color-picker', 'select2', 'acf-datepicker')
-		);
-		
-		$styles['acf-field-group'] = array(
-			'src'		=> acf_get_dir('assets/css/acf-field-group.css'),
-			'deps'		=> array('acf-input')
-		);
-		
-		
-		// register styles
-		foreach( $styles as $handle => $style ) {
-		
-			wp_register_style( $handle, $style['src'], $style['deps'], $version ); 
-			
-		}
+		// styles
+		wp_register_style('acf-global', acf_get_dir('assets/css/acf-global.css'), array(), $version );
+		wp_register_style('acf-input', acf_get_dir('assets/css/acf-input.css'), array('acf-global'), $version );
+		wp_register_style('acf-field-group', acf_get_dir('assets/css/acf-field-group.css'), array('acf-input'), $version );
 		
 	}
 	
@@ -535,11 +443,64 @@ class acf {
 	
 	
 	/*
-function posts_request( $thing ) {
+	*  get_setting
+	*
+	*  This function will return a value from the settings array found in the acf object
+	*
+	*  @type	function
+	*  @date	28/09/13
+	*  @since	5.0.0
+	*
+	*  @param	$name (string) the setting name to return
+	*  @param	$value (mixed) default value
+	*  @return	$value
+	*/
+	
+	function get_setting( $name, $value = null ) {
 		
-		return $thing;
+		// check settings
+		if( isset($this->settings[ $name ]) ) {
+			
+			$value = $this->settings[ $name ];
+			
+		}
+		
+		
+		// filter for 3rd party customization
+		if( substr($name, 0, 1) !== '_' ) {
+			
+			$value = apply_filters( "acf/settings/{$name}", $value );
+			
+		}
+		
+		
+		// return
+		return $value;
+		
 	}
-*/
+	
+	
+	/*
+	*  update_setting
+	*
+	*  This function will update a value into the settings array found in the acf object
+	*
+	*  @type	function
+	*  @date	28/09/13
+	*  @since	5.0.0
+	*
+	*  @param	$name (string)
+	*  @param	$value (mixed)
+	*  @return	n/a
+	*/
+	
+	function update_setting( $name, $value ) {
+		
+		$this->settings[ $name ] = $value;
+		
+		return true;
+		
+	}
 	
 }
 

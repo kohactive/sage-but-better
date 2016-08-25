@@ -83,6 +83,19 @@ class acf_field_oembed extends acf_field {
 		$embed = @wp_oembed_get( $url, $res );
 		
 		
+		// try shortcode
+		if( !$embed ) {
+			
+			 // global
+			global $wp_embed;
+			
+			
+			// get emebed
+			$embed = $wp_embed->shortcode($res, $url);
+		
+		}
+				
+		
 		// return
 		return $embed;
 	}
@@ -307,8 +320,10 @@ class acf_field_oembed extends acf_field {
 	
 }
 
-new acf_field_oembed();
 
-endif;
+// initialize
+acf_register_field_type( new acf_field_oembed() );
+
+endif; // class_exists check
 
 ?>

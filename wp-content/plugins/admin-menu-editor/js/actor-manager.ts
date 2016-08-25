@@ -68,13 +68,36 @@ class AmeRole extends AmeBaseActor {
 		super('role:' + roleId, displayName, capabilities);
 		this.name = roleId;
 	}
+
+
+	hasOwnCap(capability: string): boolean {
+		//In WordPress, a role name is also a capability name. Users that have the role "foo" always
+		//have the "foo" capability. It's debatable whether the role itself actually has that capability
+		//(WP_Role says no), but it's convenient to treat it that way.
+		if (capability === this.name) {
+			return true;
+		}
+		return super.hasOwnCap(capability);
+	}
+}
+
+interface AmeUserPropertyMap {
+	user_login: string;
+	display_name: string;
+	capabilities: CapabilityMap;
+	roles : string[];
+	is_super_admin: boolean;
+	id?: number;
+	avatar_html?: string;
 }
 
 class AmeUser extends AmeBaseActor {
 	userLogin: string;
+	userId: number = 0;
 	roles: string[];
 	isSuperAdmin: boolean = false;
 	groupActors: string[];
+	avatarHTML: string = '';
 
 	protected actorTypeSpecificity = 10;
 
@@ -83,13 +106,15 @@ class AmeUser extends AmeBaseActor {
 		displayName: string,
 		capabilities: CapabilityMap,
 		roles: string[],
-		isSuperAdmin: boolean = false
+		isSuperAdmin: boolean = false,
+	    userId?: number
 	) {
 		super('user:' + userLogin, displayName, capabilities);
 
 		this.userLogin = userLogin;
 		this.roles = roles;
 		this.isSuperAdmin = isSuperAdmin;
+		this.userId = userId || 0;
 
 		if (this.isSuperAdmin) {
 			this.groupActors.push(AmeSuperAdmin.permanentActorId);
@@ -97,6 +122,23 @@ class AmeUser extends AmeBaseActor {
 		for (var i = 0; i < this.roles.length; i++) {
 			this.groupActors.push('role:' + this.roles[i]);
 		}
+	}
+
+	static createFromProperties(properties: AmeUserPropertyMap): AmeUser {
+		let user = new AmeUser(
+			properties.user_login,
+			properties.display_name,
+			properties.capabilities,
+			properties.roles,
+			properties.is_super_admin,
+			properties.hasOwnProperty('id') ? properties.id : null
+		);
+
+		if (properties.avatar_html) {
+			user.avatarHTML = properties.avatar_html;
+		}
+
+		return user;
 	}
 }
 
@@ -138,14 +180,8 @@ class AmeActorManager {
 			this.roles[role.name] = role;
 		});
 
-		AmeActorManager._.forEach(users, (userDetails) => {
-			var user = new AmeUser(
-				userDetails.user_login,
-				userDetails.display_name,
-				userDetails.capabilities,
-				userDetails.roles,
-				userDetails.is_super_admin
-			);
+		AmeActorManager._.forEach(users, (userDetails: AmeUserPropertyMap) => {
+			var user = AmeUser.createFromProperties(userDetails);
 			this.users[user.userLogin] = user;
 		});
 
@@ -202,7 +238,7 @@ class AmeActorManager {
 		}
 	}
 
-	hasCap(actorId, capability, context?: {[actor: string] : any}): boolean {
+	hasCap(actorId: string, capability, context?: {[actor: string] : any}): boolean {
 		context = context || {};
 		return this.actorHasCap(actorId, capability, [context, this.grantedCapabilities]);
 	}
@@ -345,7 +381,7 @@ class AmeActorManager {
 		capability = AmeActorManager.mapMetaCap(capability);
 
 		var grant = sourceType ? [hasCap, sourceType, sourceName || null] : hasCap;
-		_.set(context, [actor, capability], grant);
+		AmeActorManager._.set(context, [actor, capability], grant);
 	}
 
 	resetCap(actor: string, capability: string) {
@@ -355,7 +391,7 @@ class AmeActorManager {
 	static resetCapInContext(context: AmeGrantedCapabilityMap, actor: string, capability: string) {
 		capability = AmeActorManager.mapMetaCap(capability);
 
-		if (_.has(context, [actor, capability])) {
+		if (AmeActorManager._.has(context, [actor, capability])) {
 			delete context[actor][capability];
 		}
 	}

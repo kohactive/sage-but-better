@@ -5,3 +5,5 @@ dist
 bower_components
 node_modules
 npm-debug.log
+uploads
+wp-config-local.php
