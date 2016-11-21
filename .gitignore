@@ -1,7 +1,8 @@
 # Include your project-specific ignores in this file
 # Read about how to use .gitignore: https://help.github.com/articles/ignoring-files
 .DS_Store
-dist
+wp-content/themes/<project-name>/dist
+wp-content/themes/<project-name>/assets/scripts/main.js
 bower_components
 node_modules
 npm-debug.log

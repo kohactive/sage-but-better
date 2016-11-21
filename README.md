@@ -5,8 +5,8 @@
 ##Project Initialization
 1. Clone the repo:
     ```
-    git clone git@github.com:kohactive/sage-but-better.git
-    cd sage-but-better
+    git clone git@github.com:kohactive/sage-but-better.git <project-name>
+    cd <project-name>
     rm -rf .git
     git init
     ```
@@ -56,7 +56,7 @@ To watch for changes:
 Deploy:
 ```
 git remote add pantheon <pantheon-git-url>
-./deploy.sh master
+./deploy.sh <branch-name>
 ```
 
 ##Database

@@ -9,3 +9,5 @@ git commit -am "Production Build"
 if [[ $1 ]]; then
   git push pantheon $1 -f
 fi
+
+git reset --hard HEAD~1
