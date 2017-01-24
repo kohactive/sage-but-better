@@ -16,7 +16,7 @@
 4. Add a `<description>` above
 5. Add the Migrate DB Pro connection information below
 6. Add GitHub issue for launch checklist:
-  
+
   ```
   - [ ] favicon
   - [ ] seo
@@ -28,7 +28,7 @@
 7. Remove this section from this readme
 
 ##Environment Setup
-1. Create local database: `wp_<project_name>`
+1. Create local database: `wp_<project-name>`
 2. "Save as" `wp-config-local-sample.php` to `wp-config-local.php`
 3. Change variables to match your setup
 
