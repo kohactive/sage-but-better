@@ -1,8 +1,8 @@
-#<project-name> WordPress
+# <project-name> WordPress
 
 <description>
 
-##Project Initialization
+## Project Initialization
 1. Clone the repo:
     ```
     git clone git@github.com:kohactive/sage-but-better.git <project-name>
@@ -27,12 +27,12 @@
 
 7. Remove this section from this readme
 
-##Environment Setup
+## Environment Setup
 1. Create local database: `wp_<project-name>`
 2. "Save as" `wp-config-local-sample.php` to `wp-config-local.php`
 3. Change variables to match your setup
 
-##Installation
+## Installation
 1. `git clone git@github.com:kohactive/<project-name>.git`
 2. Navigate your browser to the local site: http://localhost/<project-name>
 3. Follow the WordPress install instructions
@@ -46,12 +46,12 @@
 8. If you don't have the Gulp cli installed: `sudo npm install gulp-cli -g`
 9. `./install.sh`
 
-##Development
+## Development
 `./development.sh`  
 To watch for changes:  
 `./watch.sh`
 
-##Staging
+## Staging
 [dev-<project-name>.pantheonsite.io](http://<project-name>.pantheonsite.io)  
 Deploy:
 ```
@@ -59,7 +59,7 @@ git remote add pantheon <pantheon-git-url>
 ./deploy.sh <branch-name>
 ```
 
-##Database
+## Database
 [Migrate DB Pro](https://deliciousbrains.com/wp-migrate-db-pro/)
 * set up local dev install to **pull** staging db
 * **DO NOT PUSH TO STAGING. MAKE DB EDITS ON STAGING & PULL.**
@@ -69,5 +69,5 @@ Connection info:
 <staging wp admin connection info>
 ```
 
-##Base Theme
+## Base Theme
 [Sage docs](https://github.com/roots/sage)
