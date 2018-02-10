@@ -8,7 +8,6 @@
   "devDependencies": {
     "jquery": "^2.2.2",
     "normalize-scss": "^3.0.3",
-    "manhattan": "^0.5.1",
-    "unslider": "^2.0.3"
+    "manhattan": "^0.5.1"
   }
 }
