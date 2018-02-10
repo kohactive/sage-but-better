@@ -10,7 +10,7 @@
  *
  * @since 1.8
  */
-class WPSEO_JSON_LD {
+class WPSEO_JSON_LD implements WPSEO_WordPress_Integration {
 
 	/**
 	 * @var array Holds the plugins options.
@@ -32,7 +32,12 @@ class WPSEO_JSON_LD {
 	 */
 	public function __construct() {
 		$this->options = WPSEO_Options::get_options( array( 'wpseo', 'wpseo_social' ) );
+	}
 
+	/**
+	 * Registers the hooks.
+	 */
+	public function register_hooks() {
 		add_action( 'wpseo_head', array( $this, 'json_ld' ), 90 );
 		add_action( 'wpseo_json_ld', array( $this, 'website' ), 10 );
 		add_action( 'wpseo_json_ld', array( $this, 'organization_or_person' ), 20 );
@@ -82,6 +87,7 @@ class WPSEO_JSON_LD {
 		$this->data = array(
 			'@context' => 'http://schema.org',
 			'@type'    => 'WebSite',
+			'@id'      => '#website',
 			'url'      => $this->get_home_url(),
 			'name'     => $this->get_website_name(),
 		);
@@ -110,9 +116,7 @@ class WPSEO_JSON_LD {
 		$this->data = apply_filters( 'wpseo_json_ld_output', $this->data, $context );
 
 		if ( is_array( $this->data ) && ! empty( $this->data ) ) {
-			$json_data = wp_json_encode( $this->data );
-
-			echo "<script type='application/ld+json'>", $json_data, '</script>', "\n";
+			echo "<script type='application/ld+json'>", wp_json_encode( $this->data ), '</script>', "\n";
 		}
 
 		// Empty the $data array so we don't output it twice.
@@ -125,6 +129,7 @@ class WPSEO_JSON_LD {
 	private function organization() {
 		if ( '' !== $this->options['company_name'] ) {
 			$this->data['@type'] = 'Organization';
+			$this->data['@id']   = '#organization';
 			$this->data['name']  = $this->options['company_name'];
 			$this->data['logo']  = $this->options['company_logo'];
 			return;
@@ -138,6 +143,7 @@ class WPSEO_JSON_LD {
 	private function person() {
 		if ( '' !== $this->options['person_name'] ) {
 			$this->data['@type'] = 'Person';
+			$this->data['@id']   = '#person';
 			$this->data['name']  = $this->options['person_name'];
 			return;
 		}
@@ -256,6 +262,8 @@ class WPSEO_JSON_LD {
 	 *
 	 * @deprecated 2.1
 	 * @deprecated use WPSEO_JSON_LD::website()
+
+	 * @codeCoverageIgnore
 	 */
 	public function internal_search() {
 		_deprecated_function( __METHOD__, 'WPSEO 2.1', 'WPSEO_JSON_LD::website()' );

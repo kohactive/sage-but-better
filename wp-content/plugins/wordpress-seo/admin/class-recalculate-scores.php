@@ -35,13 +35,13 @@ class WPSEO_Recalculate_Scores {
 
 		$progress = sprintf(
 			/* translators: 1: expands to a <span> containing the number of posts recalculated. 2: expands to a <strong> containing the total number of posts. */
-			__( '%1$s of %2$s done.', 'wordpress-seo' ),
+			esc_html__( '%1$s of %2$s done.', 'wordpress-seo' ),
 			'<span id="wpseo_count">0</span>',
 			'<strong id="wpseo_count_total">0</strong>'
 		);
 
 		?>
-		<div id="wpseo_recalculate" style="display:none;">
+		<div id="wpseo_recalculate" class="hidden">
 			<p><?php esc_html_e( 'Recalculating SEO scores for all pieces of content with a focus keyword.', 'wordpress-seo' ); ?></p>
 
 			<div id="wpseo_progressbar"></div>

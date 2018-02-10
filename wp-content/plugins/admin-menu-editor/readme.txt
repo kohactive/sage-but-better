@@ -3,8 +3,8 @@ Contributors: whiteshadow
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=A6P9S6CE3SRSW
 Tags: admin, dashboard, menu, security, wpmu
 Requires at least: 4.1
-Tested up to: 4.6
-Stable tag: 1.7.1
+Tested up to: 4.9
+Stable tag: 1.8.1
 
 Lets you edit the WordPress admin menu. You can re-order, hide or rename menus, add custom menus and more. 
 
@@ -62,6 +62,39 @@ Plugins installed in the `mu-plugins` directory are treated as "always on", so y
 3. Re-ordering menu items via drag and drop
 
 == Changelog ==
+
+= 1.8.1 =
+* Added a workaround for a buggy "defer_parsing_of_js" code snippet that some users have added to their functions.php. This snippet produces invalid HTML code, which used to break the menu editor.
+* Fixed a PHP warning that appeared when using this plugin together with WooCommerce or YITH WooCommerce Gift Cards and running PHP 7.1.
+* Minor performance improvements.
+* Tested with WP 4.8.3 and 4.9.
+
+= 1.8 =
+* You can edit plugin names and descriptions through the "Plugins" tab. This only changes how plugins are displayed on the "Plugins" page. It doesn't affect plugin files on disk.
+* Added an option to highlight new menu items. This feature is off by default. You can enable it in the "Settings" tab.
+* Added an option to compress menu data that the plugin stores in the database.
+* Added a compatibility workaround for the Divi Training plugin. The hidden menu items that it adds to the "Dashboard" menu should no longer show up when you activate AME.
+* Added a workaround that improves compatibility with plugins that set their menu icons using CSS.
+* Fixed an old bug where sorting menu items would put all separators at the top. Now they'll stay near their preceding menu item.
+* Fixed incorrect shadows on custom screen options links.
+* Fixed a couple of UI layout issues that were caused by bugs in other plugins.
+* Fixed a rare issue where hiding the admin bar would leave behind empty space.
+* When you use the "A-Z" button to sort top level menus, it also sorts submenu items. To avoid compatibility issues, the first item of each submenu stays in its original position.
+* Automatically reset plugin access if the only allowed user no longer exists. This should cut down on the number of users who accidentally lock themselves out by setting "Who can access the plugin" to "Only the current user" and then later deleting that user account.
+* Minor performance optimizations.
+
+= 1.7.3 =
+* Fixed a bug where closing the menu properties of a custom menu item could set "extra capability" to "read". 
+* Added a workaround for WooCommerce 2.6.8 to display the number of new orders in the "Orders" menu title.
+* Minor cosmetic changes.
+* Tested with WP 4.7 and 4.8-alpha.
+
+= 1.7.2 =
+* Added capability suggestions and access preview to the "Extra capability" dropdown.
+* The plugin now remembers the last selected menu item and re-selects it after you save changes.
+* Fixed a layout issue where menus with very long titles would appear incorrectly in the menu editor.
+* When you change the menu title, the window title will also be changed to match it. You can still edit the window title separately if necessary.
+* Moved the "Icon URL" field up and moved "Window title" down.
 
 = 1.7.1 =
 * Split the "required capability" field into two parts - a read-only field that shows the actual required capability, and an editable "extra capability" that you can use to restrict access to the menu.

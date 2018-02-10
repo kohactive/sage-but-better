@@ -10,6 +10,7 @@
 
 $mainContainerWidth: 310px;
 $mainContainerBorderWidth: 1px;
+$mainContainerBorderRadius: 0px;
 
 .ws_main_container {
 	margin: 2px;
@@ -18,11 +19,12 @@ $mainContainerBorderWidth: 1px;
 	display:block;
 
 	border: $mainContainerBorderWidth solid #cdd5d5;
+	box-shadow: 0 1px 1px rgba(0,0,0,0.04);
 	background-color: #FFFFFF;
 
-	border-radius: 3px;
-	-moz-border-radius: 3px;
-	-webkit-border-radius: 3px;
+	border-radius: $mainContainerBorderRadius;
+	-moz-border-radius: $mainContainerBorderRadius;
+	-webkit-border-radius: $mainContainerBorderRadius;
 }
 
 .ws_box {
@@ -213,6 +215,11 @@ $mainContainerBorderWidth: 1px;
 	
 	padding : $itemPadding;
 	margin: 2px 0 2px $itemHorizontalMargin;
+
+	body.rtl & {
+		margin-right: $itemHorizontalMargin;
+		margin-left: 0;
+	}
 }
 
 .ws_active { }
@@ -692,10 +699,11 @@ select.ws_dropdown {
 	font-size: 12px;
 }
 
+$dropdownOptionPaddingTop: 3px;
 select.ws_dropdown option {
 	font-family : "Lucida Grande",Verdana,Arial,"Bitstream Vera Sans",sans-serif;
 	font-size: 12px;
-	padding: 3px;
+	padding: $dropdownOptionPaddingTop;
 }
 
 select.ws_dropdown optgroup option {
@@ -728,8 +736,8 @@ $activeToolTabBackground: #FDFDFD;
 
 	li.ui-tabs-active {
 		border-color: #dfdfdf;
-		background-color: #FDFDFD;
 		border-bottom-color: $activeToolTabBackground;
+		background: #FDFDFD none;
 	}
 
 	a {
@@ -1023,6 +1031,10 @@ $activeToolTabBackground: #FDFDFD;
 
 .ame-color-option {
     padding: 10px 0;
+
+	.wp-picker-container {
+		display: inline-block;
+	}
 }
 
 .ame-advanced-menu-color {
@@ -1127,6 +1139,11 @@ a#ws-ame-delete-color-preset:hover {
 	-moz-border-radius: 5px;
     -webkit-border-radius: 5px;
     border-radius: 5px;
+
+	.ui-dialog-content {
+		padding: 8px 8px 8px 8px;
+		font-size: 1.1em;
+	}
 }
 
 .ui-dialog-titlebar {
@@ -1176,11 +1193,6 @@ a#ws-ame-delete-color-preset:hover {
 
 .ui-icon-closethick {
 	
-}
-
-.ui-dialog-content {
-	padding: 8px 8px 8px 8px;
-	font-size: 1.1em;
 }
 
 #export_dialog .ws_dialog_panel {
@@ -1789,6 +1801,13 @@ $userSelectionPanelPadding: 10px;
 	font-size: 18px;
 }
 
+//And in other boxes.
+.ws_ame_custom_postbox .ws_tooltip_trigger .dashicons {
+	font-size: 18px;
+	height: 18px;
+	vertical-align: bottom;
+}
+
 .ws_wide_tooltip {
 	max-width: 450px;
 }
@@ -1836,7 +1855,7 @@ $userSelectionPanelPadding: 10px;
 	margin-left: 0.5em;
 }
 
-.ws_ame_doc_box {
+.ws_ame_doc_box, .ws_ame_custom_postbox {
 	.hndle {
 		cursor: default !important;
 	}
@@ -1871,6 +1890,12 @@ $userSelectionPanelPadding: 10px;
 	}
 }
 
+.ws_basic_container .ws_ame_custom_postbox {
+	//Match .ws_main_container's horizontal margins for proper alignment.
+	margin-left: 2px;
+	margin-right: 2px;
+}
+
 /************************************
       Copy Permissions dialog
 *************************************/
@@ -1878,7 +1903,58 @@ $userSelectionPanelPadding: 10px;
 	min-width: 280px;
 }
 
+/*********************************************
+      Capability suggestions and preview
+**********************************************/
 
+#ws_capability_suggestions {
+	padding: 4px;
+	width: 350px;
+
+	border: 1px solid #cdd5d5;
+	box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+	background: #fff;
+
+	border-top-right-radius: 3px;
+	border-bottom-right-radius: 3px;
+
+	#ws_previewed_caps {
+		margin-top: 0;
+		margin-bottom: 6px;
+	}
+
+	td, th {
+		//For consistency, padding should match the capability dropdown.
+		padding-top: $dropdownOptionPaddingTop;
+		padding-bottom: $dropdownOptionPaddingTop;
+	}
+
+	tr.ws_preview_has_access .ws_ame_role_name{
+		background-color: lightgreen;
+	}
+
+	.ws_ame_suggested_capability {
+		cursor: pointer;
+
+		&:hover {
+			background-color: #d0f2d0;
+		}
+	}
+}
+
+/*********************************************
+      Settings page stuff
+**********************************************/
+
+#ws_plugin_settings_form figure {
+	margin-left: 0;
+	margin-top: 0;
+	margin-bottom: 1em;
+}
+
+/*********************************************
+      Miscellaneous
+**********************************************/
 
 #ws_sidebar_pro_ad {
     min-width: 225px;

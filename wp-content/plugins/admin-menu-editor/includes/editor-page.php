@@ -33,10 +33,30 @@ $hide_button_extra_tooltip = 'When "All" is selected, this will hide the menu fr
 
 //Output the "Upgrade to Pro" message
 if ( !apply_filters('admin_menu_editor_is_pro', false) ){
+	//Pseudo-randomly decide whether to show the VAC link.
+	$is_vac_link_visible = (hexdec( substr(md5(get_site_url() . 'vc3'), -3) ) % 100) <= 20; //20% of sites will see it.
 	?>
 	<script type="text/javascript">
 	(function($){
-		$('#screen-meta-links').append(
+		var screenLinks = $('#screen-meta-links'),
+			showVacLink = (<?php echo $is_vac_link_visible ? 'true' : 'false' ?>);
+
+		if (showVacLink) {
+			screenLinks.append(
+				$('<div>', {
+					'class' : 'custom-screen-meta-link-wrap',
+					'id'    : 'ws-visual-admin-customizer-ad'
+				}).append($('<a>', {
+					'href'  : 'https://wordpress.org/plugins/visual-admin-customizer/',
+					'class' : 'show-settings custom-screen-meta-link',
+					'title' : 'A free plugin for customizing the WordPress admin interface',
+					'target': '_blank',
+					'text'  : 'Visual Admin Customizer'
+				}))
+			);
+		}
+
+		screenLinks.append(
 			'<div id="ws-pro-version-notice" class="custom-screen-meta-link-wrap">' +
 				'<a href="http://adminmenueditor.com/upgrade-to-pro/?utm_source=Admin%2BMenu%2BEditor%2Bfree&utm_medium=text_link&utm_content=top_upgrade_link&utm_campaign=Plugins" id="ws-pro-version-notice-link" class="show-settings custom-screen-meta-link" target="_blank" title="View Pro version details">Upgrade to Pro</a>' +
 			'</div>'
@@ -52,9 +72,7 @@ if ( !apply_filters('admin_menu_editor_is_pro', false) ){
 
 <?php
 if ( !empty($_GET['message']) ){
-	if ( intval($_GET['message']) == 1 ){
-		echo '<div id="message" class="updated notice is-dismissible"><p><strong>Settings saved.</strong></p></div>';
-	} elseif ( intval($_GET['message']) == 2 ) {
+	if ( intval($_GET['message']) == 2 ) {
 		echo '<div id="message" class="error"><p><strong>Failed to decode input! The menu wasn\'t modified.</strong></p></div>';
 	}
 }
@@ -230,12 +248,22 @@ function ame_output_sort_buttons($icons) {
 	<div class="ws_basic_container">
 
 		<div class="ws_main_container" id="ws_editor_sidebar">
-		<form method="post" action="<?php echo admin_url('options-general.php?page=menu_editor&noheader=1'); ?>" id='ws_main_form' name='ws_main_form'>
+		<form method="post" action="<?php echo esc_attr(add_query_arg('noheader', '1', $editor_data['current_tab_url'])); ?>" id='ws_main_form' name='ws_main_form'>
 			<?php wp_nonce_field('menu-editor-form'); ?>
 			<input type="hidden" name="action" value="save_menu">
+			<?php
+			printf('<input type="hidden" name="config_id" value="%s">', esc_attr($editor_data['menu_config_id']));
+			?>
 			<input type="hidden" name="data" id="ws_data" value="">
 			<input type="hidden" name="data_length" id="ws_data_length" value="">
 			<input type="hidden" name="selected_actor" id="ws_selected_actor" value="">
+
+			<input type="hidden" name="selected_menu_url" id="ws_selected_menu_url" value="">
+			<input type="hidden" name="selected_submenu_url" id="ws_selected_submenu_url" value="">
+
+			<input type="hidden" name="expand_menu" id="ws_expand_selected_menu" value="">
+			<input type="hidden" name="expand_submenu" id="ws_expand_selected_submenu" value="">
+
 			<input type="button" id='ws_save_menu' class="button-primary ws_main_button" value="Save Changes" />
 		</form>
 
@@ -259,20 +287,44 @@ function ame_output_sort_buttons($icons) {
 		</div>
 
 		<?php
+		if ( apply_filters('admin_menu_editor-show_general_box', false) ) :
+			$is_general_box_open = true;
+			if ( isset($_COOKIE['ame_vis_box_open']) ) {
+				$is_general_box_open = ($_COOKIE['ame_vis_box_open'] === '1');
+			}
+			$box_class = $is_general_box_open ? '' : 'closed';
+
+			?>
+			<div class="clear"></div>
+			<div class="metabox-holder">
+				<div class="postbox ws_ame_custom_postbox <?php echo $box_class; ?>" id="ws_ame_general_vis_box">
+					<button type="button" class="handlediv button-link">
+						<span class="toggle-indicator"></span>
+					</button>
+					<h2 class="hndle">General</h2>
+					<div class="inside">
+						<?php do_action('admin_menu_editor-general_box'); ?>
+					</div>
+				</div>
+			</div>
+			<?php
+		endif;
+
 		$hint_id = 'ws_sidebar_pro_ad';
 		$show_pro_benefits = !apply_filters('admin_menu_editor_is_pro', false) && (!isset($editor_data['show_hints'][$hint_id]) || $editor_data['show_hints'][$hint_id]);
 
 		if ( $show_pro_benefits ):
 			$benefit_variations = array(
-				'Simplified, role-based permissions.',
-				'Role-based menu permissions.',
-				'Simpler, role-based permissions.',
+				'Drag items between menu levels.',
+				'More menu icons.',
+				'Make menus open in a new tab or an iframe.',
+				'Prevent users from deleting a specific user.',
 			);
 			//Pseudo-randomly select one phrase based on the site URL.
-			$variation_index = hexdec( substr(md5(get_site_url()), -1) ) % count($benefit_variations);
+			$variation_index = hexdec( substr(md5(get_site_url() . 'ab'), -2) ) % count($benefit_variations);
 			$selected_variation = $benefit_variations[$variation_index];
 
-			$pro_version_link = 'http://adminmenueditor.com/upgrade-to-pro/?utm_source=Admin%2BMenu%2BEditor%2Bfree&utm_medium=text_link&utm_content=sidebar_link_cv' . $variation_index . '&utm_campaign=Plugins';
+			$pro_version_link = 'http://adminmenueditor.com/upgrade-to-pro/?utm_source=Admin%2BMenu%2BEditor%2Bfree&utm_medium=text_link&utm_content=sidebar_link_nv' . $variation_index . '&utm_campaign=Plugins';
 			?>
 			<div class="clear"></div>
 
@@ -281,9 +333,11 @@ function ame_output_sort_buttons($icons) {
 				<div class="ws_hint_content">
 					<strong>Upgrade to Pro:</strong>
 					<ul>
+						<li>Role-based menu permissions.</li>
+						<li>Hide items from specific users.</li>
+						<li>Menu import and export.</li>
+						<li>Change menu colors.</li>
 						<li><?php echo $selected_variation; ?></li>
-						<li>Drag items between menu levels.</li>
-						<li>Menu export &amp; import.</li>
 					</ul>
 					<a href="<?php echo esc_attr($pro_version_link); ?>" target="_blank">Learn more</a>
 					|
@@ -454,7 +508,7 @@ function ame_output_sort_buttons($icons) {
 	}
 
 	$defaultIconImages = array(
-		'images/generic.png',
+		admin_url('images/generic.png'),
 	);
 	foreach($defaultIconImages as $icon) {
 		printf(
@@ -550,6 +604,8 @@ function ame_output_sort_buttons($icons) {
 		?>
 	</div>
 </div>
+
+<?php include dirname(__FILE__) . '/cap-suggestion-box.php'; ?>
 
 <?php
 if ( $is_pro_version ) {
