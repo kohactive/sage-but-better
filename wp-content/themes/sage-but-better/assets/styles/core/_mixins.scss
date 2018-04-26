@@ -1,0 +1,23 @@
+// Support for styling input placeholder text
+@mixin placeholder {
+  &.placeholder {
+    @content;
+  }
+
+  &::-moz-placeholder {
+    @content;
+  }
+
+  &::-webkit-input-placeholder {
+    @content;
+  }
+}
+
+@mixin bg-cover($image-url: '') {
+  @if $image-url {
+    background-image: $image-url;
+  }
+
+  background-position: center;
+  background-size: cover;
+}

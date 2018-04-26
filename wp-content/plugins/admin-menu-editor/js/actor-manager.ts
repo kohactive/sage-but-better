@@ -1,9 +1,9 @@
 /// <reference path="lodash-3.10.d.ts" />
 /// <reference path="common.d.ts" />
 
-declare var wsAmeActorData: any;
+declare let wsAmeActorData: any;
 declare var wsAmeLodash: _.LoDashStatic;
-declare var AmeActors: AmeActorManager;
+declare let AmeActors: AmeActorManager;
 
 interface CapabilityMap {
 	[capabilityName: string] : boolean;
@@ -41,7 +41,7 @@ abstract class AmeBaseActor {
 	}
 
 	static getActorSpecificity(actorId: string) {
-		var actorType = actorId.substring(0, actorId.indexOf(':')),
+		let actorType = actorId.substring(0, actorId.indexOf(':')),
 			specificity = 0;
 		switch (actorType) {
 			case 'role':
@@ -58,6 +58,10 @@ abstract class AmeBaseActor {
 		}
 		return specificity;
 	}
+
+	toString(): string {
+		return this.displayName + ' [' + this.id + ']';
+	}
 }
 
 class AmeRole extends AmeBaseActor {
@@ -68,7 +72,6 @@ class AmeRole extends AmeBaseActor {
 		super('role:' + roleId, displayName, capabilities);
 		this.name = roleId;
 	}
-
 
 	hasOwnCap(capability: string): boolean {
 		//In WordPress, a role name is also a capability name. Users that have the role "foo" always
@@ -119,7 +122,7 @@ class AmeUser extends AmeBaseActor {
 		if (this.isSuperAdmin) {
 			this.groupActors.push(AmeSuperAdmin.permanentActorId);
 		}
-		for (var i = 0; i < this.roles.length; i++) {
+		for (let i = 0; i < this.roles.length; i++) {
 			this.groupActors.push('role:' + this.roles[i]);
 		}
 	}
@@ -162,6 +165,11 @@ interface AmeGrantedCapabilityMap {
 	}
 }
 
+interface AmeCapabilitySuggestion {
+	role: AmeRole;
+	capability: string;
+}
+
 class AmeActorManager {
 	private static _ = wsAmeLodash;
 
@@ -169,24 +177,46 @@ class AmeActorManager {
 	private users: {[userLogin: string] : AmeUser} = {};
 	private grantedCapabilities: AmeGrantedCapabilityMap = {};
 
-	private isMultisite: boolean = false;
+	public readonly isMultisite: boolean = false;
 	private superAdmin: AmeSuperAdmin;
+	private exclusiveSuperAdminCapabilities = {};
+
+	private tagMetaCaps = {};
+
+	private suggestedCapabilities: AmeCapabilitySuggestion[] = [];
 
 	constructor(roles, users, isMultisite: boolean = false) {
 		this.isMultisite = !!isMultisite;
 
 		AmeActorManager._.forEach(roles, (roleDetails, id) => {
-			var role = new AmeRole(id, roleDetails.name, roleDetails.capabilities);
+			const role = new AmeRole(id, roleDetails.name, roleDetails.capabilities);
 			this.roles[role.name] = role;
 		});
 
 		AmeActorManager._.forEach(users, (userDetails: AmeUserPropertyMap) => {
-			var user = AmeUser.createFromProperties(userDetails);
+			const user = AmeUser.createFromProperties(userDetails);
 			this.users[user.userLogin] = user;
 		});
 
 		if (this.isMultisite) {
 			this.superAdmin = new AmeSuperAdmin();
+		}
+
+		const exclusiveCaps: string[] = [
+			'update_core', 'update_plugins', 'delete_plugins', 'install_plugins', 'upload_plugins', 'update_themes',
+			'delete_themes', 'install_themes', 'upload_themes', 'update_core', 'edit_css', 'unfiltered_html',
+			'edit_files', 'edit_plugins', 'edit_themes', 'delete_user', 'delete_users'
+		];
+		for (let i = 0; i < exclusiveCaps.length; i++) {
+			this.exclusiveSuperAdminCapabilities[exclusiveCaps[i]] = true;
+		}
+
+		const tagMetaCaps = [
+			'manage_post_tags', 'edit_categories', 'edit_post_tags', 'delete_categories',
+			'delete_post_tags'
+		];
+		for (let i = 0; i < tagMetaCaps.length; i++) {
+			this.tagMetaCaps[tagMetaCaps[i]] = true;
 		}
 	}
 
@@ -209,7 +239,7 @@ class AmeActorManager {
 			return this.superAdmin;
 		}
 
-		var separator = actorId.indexOf(':'),
+		const separator = actorId.indexOf(':'),
 			actorType = actorId.substring(0, separator),
 			actorKey = actorId.substring(separator + 1);
 
@@ -255,14 +285,15 @@ class AmeActorManager {
 			return true;
 		}
 
-		capability = AmeActorManager.mapMetaCap(capability);
+		capability = this.mapMetaCap(capability);
+		let result = null;
 
 		//Step #1: Check temporary context - unsaved caps, etc. Optional.
 		//Step #2: Check granted capabilities. Default on, but can be skipped.
 		if (contextList) {
 			//Check for explicit settings first.
-			var result = null, actorValue, len = contextList.length;
-			for (var i = 0; i < len; i++) {
+			let actorValue, len = contextList.length;
+			for (let i = 0; i < len; i++) {
 				if (contextList[i].hasOwnProperty(actorId)) {
 					actorValue = contextList[i][actorId];
 					if (typeof actorValue === 'boolean') {
@@ -279,7 +310,7 @@ class AmeActorManager {
 		}
 
 		//Step #3: Check owned/default capabilities. Always checked.
-		var actor = this.getActor(actorId),
+		let actor = this.getActor(actorId),
 			hasOwnCap = actor.hasOwnCap(capability);
 		if (hasOwnCap !== null) {
 			return hasOwnCap;
@@ -295,7 +326,7 @@ class AmeActorManager {
 
 			//Check if any of the user's roles have the capability.
 			result = false;
-			for (var index = 0; index < actor.roles.length; index++) {
+			for (let index = 0; index < actor.roles.length; index++) {
 				result = result || this.actorHasCap('role:' + actor.roles[index], capability, contextList);
 			}
 			return result;
@@ -304,11 +335,21 @@ class AmeActorManager {
 		return false;
 	}
 
-	private static mapMetaCap(capability: string): string {
+	private mapMetaCap(capability: string): string {
 		if (capability === 'customize') {
 			return 'edit_theme_options';
 		} else if (capability === 'delete_site') {
 			return 'manage_options';
+		}
+		//In Multisite, some capabilities are only available to Super Admins.
+		if (this.isMultisite && this.exclusiveSuperAdminCapabilities.hasOwnProperty(capability)) {
+			return AmeSuperAdmin.permanentActorId;
+		}
+		if (this.tagMetaCaps.hasOwnProperty(capability)) {
+			return 'manage_categories';
+		}
+		if ((capability === 'assign_categories') || (capability === 'assign_post_tags')) {
+			return 'edit_posts';
 		}
 		return capability;
 	}
@@ -367,10 +408,10 @@ class AmeActorManager {
 	 * Grant or deny a capability to an actor.
 	 */
 	setCap(actor: string, capability: string, hasCap: boolean, sourceType?, sourceName?) {
-		AmeActorManager.setCapInContext(this.grantedCapabilities, actor, capability, hasCap, sourceType, sourceName);
+		this.setCapInContext(this.grantedCapabilities, actor, capability, hasCap, sourceType, sourceName);
 	}
 
-	static setCapInContext(
+	public setCapInContext(
 		context: AmeGrantedCapabilityMap,
 		actor: string,
 		capability: string,
@@ -378,18 +419,18 @@ class AmeActorManager {
 		sourceType?: string,
 		sourceName?: string
 	) {
-		capability = AmeActorManager.mapMetaCap(capability);
+		capability = this.mapMetaCap(capability);
 
-		var grant = sourceType ? [hasCap, sourceType, sourceName || null] : hasCap;
+		const grant = sourceType ? [hasCap, sourceType, sourceName || null] : hasCap;
 		AmeActorManager._.set(context, [actor, capability], grant);
 	}
 
 	resetCap(actor: string, capability: string) {
-		AmeActorManager.resetCapInContext(this.grantedCapabilities, actor, capability);
+		this.resetCapInContext(this.grantedCapabilities, actor, capability);
 	}
 
-	static resetCapInContext(context: AmeGrantedCapabilityMap, actor: string, capability: string) {
-		capability = AmeActorManager.mapMetaCap(capability);
+	public resetCapInContext(context: AmeGrantedCapabilityMap, actor: string, capability: string) {
+		capability = this.mapMetaCap(capability);
 
 		if (AmeActorManager._.has(context, [actor, capability])) {
 			delete context[actor][capability];
@@ -403,13 +444,13 @@ class AmeActorManager {
 	 * the direct grant is redundant. We can remove it. Jane will still have "edit_posts" because she's an editor.
 	 */
 	pruneGrantedUserCapabilities(): AmeGrantedCapabilityMap {
-		var _ = AmeActorManager._,
+		let _ = AmeActorManager._,
 			pruned = _.cloneDeep(this.grantedCapabilities),
 			context = [pruned];
 
-		var actorKeys = _(pruned).keys().filter((actorId) => {
+		let actorKeys = _(pruned).keys().filter((actorId) => {
 			//Skip users that are not loaded.
-			var actor = this.getActor(actorId);
+			const actor = this.getActor(actorId);
 			if (actor === null) {
 				return false;
 			}
@@ -418,10 +459,10 @@ class AmeActorManager {
 
 		_.forEach(actorKeys, (actor) => {
 			_.forEach(_.keys(pruned[actor]), (capability) => {
-				var grant = pruned[actor][capability];
+				const grant = pruned[actor][capability];
 				delete pruned[actor][capability];
 
-				var hasCap = _.isArray(grant) ? grant[0] : grant,
+				const hasCap = _.isArray(grant) ? grant[0] : grant,
 					hasCapWhenPruned = this.actorHasCap(actor, capability, context);
 
 				if (hasCap !== hasCapWhenPruned) {
@@ -444,12 +485,120 @@ class AmeActorManager {
 	 * @return {Number}
 	 */
 	static compareActorSpecificity(actor1: string, actor2: string): Number {
-		var delta = AmeBaseActor.getActorSpecificity(actor1) - AmeBaseActor.getActorSpecificity(actor2);
+		let delta = AmeBaseActor.getActorSpecificity(actor1) - AmeBaseActor.getActorSpecificity(actor2);
 		if (delta !== 0) {
 			delta = (delta > 0) ? 1 : -1;
 		}
 		return delta;
 	};
+
+	generateCapabilitySuggestions(capPower): void {
+		let _ = AmeActorManager._;
+
+		let capsByPower = _.memoize((role: AmeRole): {capability: string, power: number}[] => {
+			let sortedCaps = _.reduce(role.capabilities, (result, hasCap, capability) => {
+				if (hasCap) {
+					result.push({
+						capability: capability,
+						power: _.get(capPower, [capability], 0)
+					});
+				}
+				return result;
+			}, []);
+
+			sortedCaps = _.sortBy(sortedCaps, (item) => -item.power);
+			return sortedCaps;
+		});
+
+		let rolesByPower: AmeRole[] = _.values<AmeRole>(this.getRoles()).sort(function(a: AmeRole, b: AmeRole) {
+			let aCaps = capsByPower(a),
+				bCaps = capsByPower(b);
+
+			//Prioritise roles with the highest number of the most powerful capabilities.
+			let i = 0, limit = Math.min(aCaps.length, bCaps.length);
+			for (; i < limit; i++) {
+				let delta = bCaps[i].power - aCaps[i].power;
+				if (delta !== 0) {
+					return delta;
+				}
+			}
+
+			//Give a tie to the role that has more capabilities.
+			let delta = bCaps.length - aCaps.length;
+			if (delta !== 0) {
+				return delta;
+			}
+
+			//Failing that, just sort alphabetically.
+			if (a.displayName > b.displayName) {
+				return 1;
+			} else if (a.displayName < b.displayName) {
+				return -1;
+			}
+			return 0;
+		});
+
+		let preferredCaps = [
+			'manage_network_options',
+			'install_plugins', 'edit_plugins', 'delete_users',
+			'manage_options', 'switch_themes',
+			'edit_others_pages', 'edit_others_posts', 'edit_pages',
+			'unfiltered_html',
+			'publish_posts', 'edit_posts',
+			'read'
+		];
+
+		let deprecatedCaps = _(_.range(0, 10)).map((level) => 'level_' + level).value();
+		deprecatedCaps.push('edit_files');
+
+		let findDiscriminant = (caps: string[], includeRoles: AmeRole[], excludeRoles): string => {
+			let getEnabledCaps = (role: AmeRole): string[] => {
+				return _.keys(_.pick(role.capabilities, _.identity));
+			};
+
+			//Find caps that all of the includeRoles have and excludeRoles don't.
+			let includeCaps = _.intersection.apply(_, _.map(includeRoles, getEnabledCaps)),
+				excludeCaps = _.union.apply(_, _.map(excludeRoles, getEnabledCaps)),
+				possibleCaps = _.without.apply(_, [includeCaps].concat(excludeCaps).concat(deprecatedCaps));
+
+			let bestCaps = _.intersection(preferredCaps, possibleCaps);
+
+			if (bestCaps.length > 0) {
+				return bestCaps[0];
+			} else if (possibleCaps.length > 0) {
+				return possibleCaps[0];
+			}
+			return null;
+		};
+
+		let suggestedCapabilities = [];
+		for (let i = 0; i < rolesByPower.length; i++) {
+			let role = rolesByPower[i];
+
+			let cap = findDiscriminant(
+				preferredCaps,
+				_.slice(rolesByPower, 0, i + 1),
+				_.slice(rolesByPower, i + 1, rolesByPower.length)
+			);
+			suggestedCapabilities.push({role: role, capability: cap});
+		}
+
+		let previousSuggestion = null;
+		for (let i = suggestedCapabilities.length - 1; i >= 0; i--) {
+			if (suggestedCapabilities[i].capability === null) {
+				suggestedCapabilities[i].capability =
+					previousSuggestion ? previousSuggestion : 'exist';
+			} else {
+				previousSuggestion = suggestedCapabilities[i].capability;
+			}
+		}
+
+		this.suggestedCapabilities = suggestedCapabilities;
+	}
+
+	public getSuggestedCapabilities(): AmeCapabilitySuggestion[] {
+		return this.suggestedCapabilities;
+	}
 }
 
 if (typeof wsAmeActorData !== 'undefined') {
@@ -458,4 +607,8 @@ if (typeof wsAmeActorData !== 'undefined') {
 		wsAmeActorData.users,
 		wsAmeActorData.isMultisite
 	);
+
+	if (typeof wsAmeActorData['capPower'] !== 'undefined') {
+		AmeActors.generateCapabilitySuggestions(wsAmeActorData['capPower']);
+	}
 }

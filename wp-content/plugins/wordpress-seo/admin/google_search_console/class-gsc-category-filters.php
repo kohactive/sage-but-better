@@ -23,7 +23,7 @@ class WPSEO_GSC_Category_Filters {
 	 *
 	 * @var array
 	 */
-	private $filter_values   = array();
+	private $filter_values = array();
 
 	/**
 	 * The current category
@@ -80,7 +80,8 @@ class WPSEO_GSC_Category_Filters {
 	 * Getting the current view
 	 */
 	private function get_current_category() {
-		if ( $current_category = filter_input( INPUT_GET, 'category' ) ) {
+		$current_category = filter_input( INPUT_GET, 'category' );
+		if ( ! empty( $current_category ) ) {
 			return $current_category;
 		}
 
@@ -112,11 +113,11 @@ class WPSEO_GSC_Category_Filters {
 	private function set_filter_values() {
 		$this->set_filter_value( 'access_denied', __( 'Access denied', 'wordpress-seo' ), __( 'Server requires authentication or is blocking Googlebot from accessing the site.', 'wordpress-seo' ), __( 'Show information about errors in category \'Access Denied\'', 'wordpress-seo' ) );
 		$this->set_filter_value( 'faulty_redirects', __( 'Faulty redirects', 'wordpress-seo' ) );
-		$this->set_filter_value( 'not_followed',__( 'Not followed', 'wordpress-seo' ) );
+		$this->set_filter_value( 'not_followed', __( 'Not followed', 'wordpress-seo' ) );
 		$this->set_filter_value( 'not_found', __( 'Not found', 'wordpress-seo' ), __( 'URL points to a non-existent page.', 'wordpress-seo' ), __( 'Show information about errors in category \'Not Found\'', 'wordpress-seo' ) );
 		$this->set_filter_value( 'other', __( 'Other', 'wordpress-seo' ), __( 'Google was unable to crawl this URL due to an undetermined issue.', 'wordpress-seo' ), __( 'Show information about errors in category \'Other\'', 'wordpress-seo' ) );
 		/* Translators: %1$s: expands to '<code>robots.txt</code>'. */
-		$this->set_filter_value( 'roboted', __( 'Blocked', 'wordpress-seo' ), sprintf( __( 'Googlebot could access your site, but certain URLs are blocked for Googlebot in your %1$s file. This block could either be for all Googlebots or even specifically for Googlebot-mobile.', 'wordpress-seo' ), '<code>robots.txt</code>' ), __( 'Show information about errors in category \'Blocked\'' ) );
+		$this->set_filter_value( 'roboted', __( 'Blocked', 'wordpress-seo' ), sprintf( __( 'Googlebot could access your site, but certain URLs are blocked for Googlebot in your %1$s file. This block could either be for all Googlebots or even specifically for Googlebot-mobile.', 'wordpress-seo' ), '<code>robots.txt</code>' ), __( 'Show information about errors in category \'Blocked\'', 'wordpress-seo' ) );
 		$this->set_filter_value( 'server_error', __( 'Server Error', 'wordpress-seo' ), __( 'Request timed out or site is blocking Google.', 'wordpress-seo' ), __( 'Show information about errors in category \'Server\'', 'wordpress-seo' ) );
 		$this->set_filter_value( 'soft_404', __( 'Soft 404', 'wordpress-seo' ), __( "The target URL doesn't exist, but your server is not returning a 404 (file not found) error.", 'wordpress-seo' ), __( 'Show information about errors in category \'Soft 404\'', 'wordpress-seo' ) );
 	}
@@ -146,7 +147,12 @@ class WPSEO_GSC_Category_Filters {
 	 * @return string
 	 */
 	private function create_view_link( $category, $count ) {
-		$href  = add_query_arg( array( 'category' => $category, 'paged' => 1 ) );
+		$href = add_query_arg(
+			array(
+				'category' => $category,
+				'paged'    => 1,
+			)
+		);
 
 		$class = 'gsc_category';
 
@@ -154,7 +160,8 @@ class WPSEO_GSC_Category_Filters {
 			$class .= ' current';
 		}
 
-		$help_button = $help_panel = '';
+		$help_button = '';
+		$help_panel  = '';
 		if ( $this->filter_values[ $category ]['description'] !== '' ) {
 			$help        = new WPSEO_Admin_Help_Panel( $category, $this->filter_values[ $category ]['help-button'], $this->filter_values[ $category ]['description'], 'has-wrapper' );
 			$help_button = $help->get_button_html();

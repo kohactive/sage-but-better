@@ -1,0 +1,42 @@
+.block {
+  display: block;
+}
+
+.center {
+  text-align: center;
+}
+
+.uppercase {
+  text-transform: uppercase;
+}
+
+.pull-right {
+  text-align: right;
+}
+
+.visually-hidden {
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+}
+
+.bg-cover {
+  @include bg-cover;
+}
+
+.light {
+  font-weight: $font-weight-light;
+}
+
+.regular {
+  font-weight: $font-weight-regular;
+}
+
+.bold {
+  font-weight: $font-weight-bold;
+}

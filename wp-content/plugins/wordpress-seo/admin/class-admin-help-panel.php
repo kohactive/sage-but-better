@@ -51,7 +51,7 @@ class WPSEO_Admin_Help_Panel {
 	 */
 	public function get_button_html() {
 
-		if ( ! $this->id || ! $this->help_button_text ) {
+		if ( ! $this->id || ! $this->help_button_text || ! $this->help_content ) {
 			return '';
 		}
 
@@ -73,7 +73,8 @@ class WPSEO_Admin_Help_Panel {
 			return '';
 		}
 
-		$wrapper_start = $wrapper_end = '';
+		$wrapper_start = '';
+		$wrapper_end   = '';
 
 		if ( 'has-wrapper' === $this->wrapper ) {
 			$wrapper_start = '<div class="yoast-seo-help-container">';
